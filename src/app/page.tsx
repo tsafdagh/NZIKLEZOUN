@@ -456,7 +456,7 @@ export default function Home() {
         <div className="flex justify-center">{renderContent()}</div>
       </main>
       <footer className="text-center p-4 text-sm text-muted-foreground">
-        Propulsé par l'IA Générative
+        Propulsé par NziklèZoun
       </footer>
     </div>
   );
