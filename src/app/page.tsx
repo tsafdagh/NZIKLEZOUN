@@ -41,6 +41,7 @@ import {
   Sparkles,
   ChevronRight,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 // Définit le schéma de validation du formulaire avec Zod.
 // Zod est une bibliothèque de validation qui s'intègre bien avec react-hook-form.
@@ -157,34 +158,19 @@ function SubjectForm({
   );
 }
 
-/**
- * Composant réutilisable pour afficher une section du script.
- * @param icon - Le composant icône à afficher.
- * @param title - Le titre de la section.
- * @param content - Le contenu de la section.
- */
-function ScriptSection({
-  icon: Icon,
-  title,
-  content,
-}: {
-  icon: React.ElementType;
-  title: string;
-  content: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-3">
-        <Icon className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold font-headline">{title}</h3>
-      </div>
-      <p className="text-muted-foreground pl-8">{content}</p>
-    </div>
-  );
-}
+// Schéma de validation pour le formulaire d'édition de script.
+const scriptEditSchema = z.object({
+  title: z.string(),
+  introduction: z.string(),
+  keyPoints: z.string(),
+  practicalExample: z.string(),
+  conclusion: z.string(),
+  visualSuggestions: z.string(),
+});
+type ScriptEditFormValues = z.infer<typeof scriptEditSchema>;
 
 /**
- * Composant pour afficher le script généré.
+ * Composant pour afficher et éditer le script généré.
  */
 function ScriptDisplay({
   script,
@@ -192,52 +178,146 @@ function ScriptDisplay({
   isGenerating,
 }: {
   script: GenerateEducationalVideoScriptOutput;
-  onGenerateVideo: () => void;
+  onGenerateVideo: (
+    editedScript: GenerateEducationalVideoScriptOutput
+  ) => void;
   isGenerating: boolean;
 }) {
+  const form = useForm<ScriptEditFormValues>({
+    resolver: zodResolver(scriptEditSchema),
+    defaultValues: script, // Pré-remplit le formulaire avec le script généré
+  });
+
+  // Cette fonction est appelée lors de la soumission du formulaire d'édition.
+  const onSubmit = (data: ScriptEditFormValues) => {
+    onGenerateVideo(data); // Appelle la fonction du parent avec le script modifié.
+  };
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
         <div className="flex items-center gap-3 mb-2">
           <FileText className="h-6 w-6 text-primary" />
           <CardTitle className="text-2xl font-headline">
-            {script.title}
+            Éditez votre script
           </CardTitle>
         </div>
-        <CardDescription>{script.introduction}</CardDescription>
+        <CardDescription>
+          Modifiez le script ci-dessous, puis cliquez sur "Accepter & Générer la
+          Vidéo".
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <ScriptSection
-          icon={BookCheck}
-          title="Points Clés"
-          content={script.keyPoints}
-        />
-        <ScriptSection
-          icon={Lightbulb}
-          title="Exemple Pratique"
-          content={script.practicalExample}
-        />
-        <ScriptSection
-          icon={Clapperboard}
-          title="Conclusion"
-          content={script.conclusion}
-        />
-        <ScriptSection
-          icon={Film}
-          title="Suggestions Visuelles"
-          content={script.visualSuggestions}
-        />
-      </CardContent>
-      <CardFooter className="flex-col sm:flex-row gap-2">
-        <Button
-          onClick={onGenerateVideo}
-          disabled={isGenerating}
-          className="w-full sm:w-auto"
-        >
-          {isGenerating ? "Génération de la vidéo..." : "Accepter & Générer la Vidéo"}
-          <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
-      </CardFooter>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-6">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 text-lg font-semibold">
+                    <Sparkles className="h-5 w-5 text-primary" /> Titre
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} className="text-base" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="introduction"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 text-lg font-semibold">
+                    <Clapperboard className="h-5 w-5 text-primary" />{" "}
+                    Introduction
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={4} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="keyPoints"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 text-lg font-semibold">
+                    <BookCheck className="h-5 w-5 text-primary" /> Points Clés
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={5} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="practicalExample"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 text-lg font-semibold">
+                    <Lightbulb className="h-5 w-5 text-primary" /> Exemple
+                    Pratique
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={5} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="conclusion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 text-lg font-semibold">
+                    <Clapperboard className="h-5 w-5 text-primary" /> Conclusion
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={3} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="visualSuggestions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2 text-lg font-semibold">
+                    <Film className="h-5 w-5 text-primary" /> Suggestions
+                    Visuelles
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea {...field} rows={5} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+          <CardFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              type="submit"
+              disabled={isGenerating}
+              className="w-full sm:w-auto"
+            >
+              {isGenerating
+                ? "Génération de la vidéo..."
+                : "Accepter & Générer la Vidéo"}
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }
@@ -257,7 +337,8 @@ function VideoDisplay({
       <CardHeader>
         <CardTitle className="font-headline">Votre vidéo est prête !</CardTitle>
         <CardDescription>
-          Regardez la vidéo générée ci-dessous. Vous pouvez la télécharger ou recommencer.
+          Regardez la vidéo générée ci-dessous. Vous pouvez la télécharger ou
+          recommencer.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -308,12 +389,13 @@ export default function Home() {
   };
 
   // Fonction pour gérer la demande de génération de vidéo.
-  const handleVideoGeneration = async () => {
-    if (!state.script) return; // S'assure qu'un script existe.
+  const handleVideoGeneration = async (
+    editedScript: GenerateEducationalVideoScriptOutput
+  ) => {
     setState((s) => ({ ...s, isLoadingVideo: true }));
 
-    // Appelle l'action serveur `generateVideoAction`.
-    const result = await generateVideoAction({ script: state.script });
+    // Appelle l'action serveur `generateVideoAction` avec le script (modifié).
+    const result = await generateVideoAction({ script: editedScript });
 
     if (result.success && result.data) {
       // Met à jour l'état avec l'URL de la vidéo.
@@ -341,7 +423,9 @@ export default function Home() {
       return <Loader text="Libérer la créativité, une ligne à la fois..." />;
     }
     if (state.isLoadingVideo) {
-      return <Loader text="Donner vie à votre script... Cela peut prendre un moment." />;
+      return (
+        <Loader text="Donner vie à votre script... Cela peut prendre un moment." />
+      );
     }
     if (state.videoUrl) {
       return <VideoDisplay videoUrl={state.videoUrl} onReset={handleReset} />;
@@ -369,9 +453,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <AppHeader />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="flex justify-center">
-          {renderContent()}
-        </div>
+        <div className="flex justify-center">{renderContent()}</div>
       </main>
       <footer className="text-center p-4 text-sm text-muted-foreground">
         Propulsé par l'IA Générative
