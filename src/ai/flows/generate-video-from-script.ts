@@ -53,11 +53,10 @@ const generateVideoFromScriptFlow = ai.defineFlow(
   async input => {
     // Appel au modèle de génération d'IA (ici, le modèle vidéo Veo de Google).
     let {operation} = await ai.generate({
-      model: 'googleai/veo-2.0-generate-001', // Spécifie le modèle à utiliser.
+      model: 'googleai/veo-3.0-generate-preview', // Spécifie le modèle à utiliser (Veo 3).
       prompt: input.script, // Le script est passé comme prompt.
       config: {
         // Configuration spécifique au modèle.
-        durationSeconds: 5,
         aspectRatio: '16:9',
       },
     });
