@@ -40,6 +40,7 @@ import {
   Film,
   Sparkles,
   ChevronRight,
+  RefreshCcw,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -176,12 +177,14 @@ function ScriptDisplay({
   script,
   onGenerateVideo,
   isGenerating,
+  onReset,
 }: {
   script: GenerateEducationalVideoScriptOutput;
   onGenerateVideo: (
     editedScript: GenerateEducationalVideoScriptOutput
   ) => void;
   isGenerating: boolean;
+  onReset: () => void;
 }) {
   const form = useForm<ScriptEditFormValues>({
     resolver: zodResolver(scriptEditSchema),
@@ -304,7 +307,7 @@ function ScriptDisplay({
               )}
             />
           </CardContent>
-          <CardFooter className="flex-col sm:flex-row gap-2">
+          <CardFooter className="flex-col sm:flex-row gap-2 justify-between">
             <Button
               type="submit"
               disabled={isGenerating}
@@ -314,6 +317,15 @@ function ScriptDisplay({
                 ? "Génération de la vidéo..."
                 : "Accepter & Générer la Vidéo"}
               <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onReset}
+              className="w-full sm:w-auto"
+            >
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Changer de sujet
             </Button>
           </CardFooter>
         </form>
@@ -436,6 +448,7 @@ export default function Home() {
           script={state.script}
           onGenerateVideo={handleVideoGeneration}
           isGenerating={state.isLoadingVideo}
+          onReset={handleReset}
         />
       );
     }
