@@ -3,7 +3,8 @@
  * @fileOverview Ce fichier définit un flux Genkit pour générer une vidéo à partir d'un script.
  *
  * Le flux prend un script en entrée et utilise le modèle Veo pour générer une vidéo.
- * Il gère l'opération asynchrone de génération vidéo.
+ * Il gère l'opération asynchrone de génération vidéo, télécharge la vidéo,
+ * et la convertit en data URI pour qu'elle soit directement utilisable dans le navigateur.
  *
  * @fileOverview Génère une vidéo à partir d'un script fourni.
  * - generateVideoFromScript - Fonction pour générer la vidéo à partir du script.
@@ -13,22 +14,19 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import * as fs from 'fs';
-import {Readable} from 'stream';
+import type {MediaPart} from 'genkit';
 
 // Schéma d'entrée pour le flux, attendant un script sous forme de chaîne de caractères.
 const GenerateVideoFromScriptInputSchema = z.object({
-  script: z
-    .string()
-    .describe('Le script à partir duquel générer la vidéo.'),
+  script: z.string().describe('Le script à partir duquel générer la vidéo.'),
 });
 export type GenerateVideoFromScriptInput = z.infer<
   typeof GenerateVideoFromScriptInputSchema
 >;
 
-// Schéma de sortie, qui contiendra l'URL de la vidéo générée.
+// Schéma de sortie, qui contiendra l'URL de la vidéo générée au format data URI.
 const GenerateVideoFromScriptOutputSchema = z.object({
-  videoUrl: z.string().describe("L'URL de la vidéo générée."),
+  videoUrl: z.string().describe('La vidéo générée, encodée en data URI.'),
 });
 export type GenerateVideoFromScriptOutput = z.infer<
   typeof GenerateVideoFromScriptOutputSchema
@@ -37,7 +35,7 @@ export type GenerateVideoFromScriptOutput = z.infer<
 /**
  * Point d'entrée pour le flux de génération de vidéo.
  * @param {GenerateVideoFromScriptInput} input - L'objet contenant le script.
- * @returns {Promise<GenerateVideoFromScriptOutput>} Une promesse qui se résout avec l'URL de la vidéo.
+ * @returns {Promise<GenerateVideoFromScriptOutput>} Une promesse qui se résout avec la data URI de la vidéo.
  */
 export async function generateVideoFromScript(
   input: GenerateVideoFromScriptInput
@@ -66,7 +64,7 @@ const generateVideoFromScriptFlow = ai.defineFlow(
 
     // La génération de vidéo est une opération longue. Le modèle renvoie une "opération" à surveiller.
     if (!operation) {
-      throw new Error("Le modèle devait retourner une opération");
+      throw new Error('Le modèle devait retourner une opération');
     }
 
     // Boucle de surveillance : on vérifie l'état de l'opération jusqu'à ce qu'elle soit terminée.
@@ -89,9 +87,47 @@ const generateVideoFromScriptFlow = ai.defineFlow(
       throw new Error('Impossible de trouver la vidéo générée');
     }
 
-    // Retourne l'URL de la vidéo. L'URL est souvent une data URI (base64).
+    // Télécharge la vidéo et la convertit en data URI.
+    const videoDataUri = await downloadVideoAsDataUri(video);
+
+    // Retourne la data URI de la vidéo.
     return {
-      videoUrl: video.media!.url,
+      videoUrl: videoDataUri,
     };
   }
 );
+
+/**
+ * Télécharge une vidéo à partir d'une URL signée et la convertit en data URI.
+ * @param {MediaPart} video - L'objet media part contenant l'URL de la vidéo.
+ * @returns {Promise<string>} Une promesse qui se résout avec la data URI de la vidéo.
+ */
+async function downloadVideoAsDataUri(video: MediaPart): Promise<string> {
+  const fetch = (await import('node-fetch')).default;
+  if (!video.media?.url) {
+    throw new Error('URL de la vidéo manquante.');
+  }
+
+  // L'URL retournée par Veo est une URL signée qui nécessite la clé d'API pour le téléchargement.
+  const videoDownloadResponse = await fetch(
+    `${video.media.url}&key=${process.env.GEMINI_API_KEY}`
+  );
+
+  if (
+    !videoDownloadResponse ||
+    videoDownloadResponse.status !== 200 ||
+    !videoDownloadResponse.body
+  ) {
+    throw new Error('Échec du téléchargement de la vidéo');
+  }
+
+  // Lit le corps de la réponse en tant que Buffer.
+  const videoBuffer = await videoDownloadResponse.arrayBuffer();
+  const buffer = Buffer.from(videoBuffer);
+
+  // Détermine le type de contenu, avec une valeur par défaut si non fourni.
+  const contentType = video.media.contentType || 'video/mp4';
+
+  // Crée la data URI.
+  return `data:${contentType};base64,${buffer.toString('base64')}`;
+}
