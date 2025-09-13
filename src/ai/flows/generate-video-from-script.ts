@@ -19,7 +19,12 @@ import type {MediaPart} from 'genkit';
 // Schéma d'entrée pour le flux, attendant un script sous forme de chaîne de caractères.
 const GenerateVideoFromScriptInputSchema = z.object({
   script: z.string().describe('Le script à partir duquel générer la vidéo.'),
-  model: z.string().optional().describe('Le modèle vidéo à utiliser (veo-2.0-generate-001 ou veo-3.0-generate-preview).'),
+  model: z
+    .string()
+    .optional()
+    .describe(
+      'Le modèle vidéo à utiliser (veo-2.0-generate-001 ou veo-3.0-generate-preview).'
+    ),
 });
 export type GenerateVideoFromScriptInput = z.infer<
   typeof GenerateVideoFromScriptInputSchema
@@ -54,11 +59,14 @@ const generateVideoFromScriptFlow = ai.defineFlow(
   async input => {
     // Détermine le modèle à utiliser. Par défaut, ce sera Veo 2.
     const model = input.model || 'googleai/veo-2.0-generate-001';
-    let config: { durationSeconds?: number, aspectRatio: string } = { aspectRatio: '16:9' };
+    let config: {durationSeconds?: number; aspectRatio: string} = {
+      aspectRatio: '16:9',
+    };
 
     // Veo 2 permet de configurer la durée, Veo 3 non (elle est par défaut à 8s).
+    // Nous réglons la durée sur 8 secondes pour Veo 2 pour avoir la vidéo la plus longue possible.
     if (model === 'googleai/veo-2.0-generate-001') {
-      config.durationSeconds = 8; // Durée maximale
+      config.durationSeconds = 8;
     }
 
     // Appel au modèle de génération d'IA (ici, le modèle vidéo Veo de Google).
