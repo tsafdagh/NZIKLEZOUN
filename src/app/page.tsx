@@ -41,6 +41,7 @@ import {
   Sparkles,
   ChevronRight,
   RefreshCcw,
+  Download,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -399,8 +400,15 @@ function VideoDisplay({
           <video src={videoUrl} controls className="h-full w-full" />
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex-col sm:flex-row gap-2 justify-start">
+        <Button asChild>
+          <a href={videoUrl} download="video-ia.mp4">
+            <Download />
+            Télécharger
+          </a>
+        </Button>
         <Button onClick={onReset} variant="outline">
+          <RefreshCcw />
           Recommencer
         </Button>
       </CardFooter>
