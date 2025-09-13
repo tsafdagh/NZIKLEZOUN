@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
       timeout: 120,
     },
   },
+  // Autorise les requêtes cross-origin depuis l'environnement de développement.
+  allowedDevOrigins: [
+    'https://6000-firebase-studio-1757249485337.cluster-fbfjltn375c6wqxlhoehbz44sk.cloudworkstations.dev',
+  ],
 };
 
 export default nextConfig;
