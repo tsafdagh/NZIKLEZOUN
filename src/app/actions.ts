@@ -67,6 +67,7 @@ export async function generateScriptAction(params: {
  */
 export async function generateVideoAction(params: {
   script: GenerateEducationalVideoScriptOutput;
+  model: string;
 }): Promise<ActionResult<{videoUrl: string}>> {
   try {
     // 1. Déstructurer le script pour extraire toutes ses parties.
@@ -90,7 +91,10 @@ export async function generateVideoAction(params: {
         `;
 
     // 3. Appeler le flux Genkit pour générer la vidéo.
-    const result = await generateVideoFromScript({script: fullScript});
+    const result = await generateVideoFromScript({
+      script: fullScript,
+      model: params.model,
+    });
     // 4. Retourner l'URL de la vidéo en cas de succès.
     return {success: true, data: result};
   } catch (e) {

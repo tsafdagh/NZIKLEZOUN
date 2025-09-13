@@ -43,6 +43,8 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Définit le schéma de validation du formulaire avec Zod.
 // Zod est une bibliothèque de validation qui s'intègre bien avec react-hook-form.
@@ -167,6 +169,7 @@ const scriptEditSchema = z.object({
   practicalExample: z.string(),
   conclusion: z.string(),
   visualSuggestions: z.string(),
+  videoModel: z.string(),
 });
 type ScriptEditFormValues = z.infer<typeof scriptEditSchema>;
 
@@ -181,19 +184,21 @@ function ScriptDisplay({
 }: {
   script: GenerateEducationalVideoScriptOutput;
   onGenerateVideo: (
-    editedScript: GenerateEducationalVideoScriptOutput
+    editedScript: GenerateEducationalVideoScriptOutput,
+    model: string
   ) => void;
   isGenerating: boolean;
   onReset: () => void;
 }) {
   const form = useForm<ScriptEditFormValues>({
     resolver: zodResolver(scriptEditSchema),
-    defaultValues: script, // Pré-remplit le formulaire avec le script généré
+    defaultValues: { ...script, videoModel: "googleai/veo-2.0-generate-001" }, // Pré-remplit le formulaire
   });
 
   // Cette fonction est appelée lors de la soumission du formulaire d'édition.
   const onSubmit = (data: ScriptEditFormValues) => {
-    onGenerateVideo(data); // Appelle la fonction du parent avec le script modifié.
+    const { videoModel, ...editedScript } = data;
+    onGenerateVideo(editedScript, videoModel); // Appelle la fonction du parent avec le script et le modèle.
   };
 
   return (
@@ -206,8 +211,8 @@ function ScriptDisplay({
           </CardTitle>
         </div>
         <CardDescription>
-          Modifiez le script ci-dessous, puis cliquez sur "Accepter & Générer la
-          Vidéo".
+          Modifiez le script, choisissez un modèle vidéo, puis cliquez sur
+          "Accepter & Générer la Vidéo".
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -301,6 +306,42 @@ function ScriptDisplay({
                   </FormLabel>
                   <FormControl>
                     <Textarea {...field} rows={5} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="videoModel"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="flex items-center gap-2 text-lg font-semibold">
+                    <Film className="h-5 w-5 text-primary" /> Modèle Vidéo
+                  </FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="googleai/veo-2.0-generate-001" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Veo 2 (Stable, durée max 8s)
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="googleai/veo-3.0-generate-preview" />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          Veo 3 (Dernière version, plus réaliste, durée ~8s)
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -402,12 +443,13 @@ export default function Home() {
 
   // Fonction pour gérer la demande de génération de vidéo.
   const handleVideoGeneration = async (
-    editedScript: GenerateEducationalVideoScriptOutput
+    editedScript: GenerateEducationalVideoScriptOutput,
+    model: string
   ) => {
     setState((s) => ({ ...s, isLoadingVideo: true }));
 
-    // Appelle l'action serveur `generateVideoAction` avec le script (modifié).
-    const result = await generateVideoAction({ script: editedScript });
+    // Appelle l'action serveur `generateVideoAction` avec le script (modifié) et le modèle.
+    const result = await generateVideoAction({ script: editedScript, model });
 
     if (result.success && result.data) {
       // Met à jour l'état avec l'URL de la vidéo.
